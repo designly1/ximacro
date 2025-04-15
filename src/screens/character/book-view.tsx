@@ -7,6 +7,7 @@ import MacroForm from '@/screens/character/macro-form';
 
 import { useApp } from '@/contexts/app-provider';
 import { extractMacroNumber } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
 import { BiCollapseVertical } from 'react-icons/bi';
 import { BsClipboard2CheckFill } from 'react-icons/bs';
@@ -36,6 +37,7 @@ export default function BookView() {
 	const [bookPages, setBookPages] = useState<MacroItem[][]>([]);
 	const [openIndexes, setOpenIndexes] = useState<number[]>([]);
 	const [copiedMacroConfirm, setCopiedMacroConfirm] = useState(false);
+	const [copiedPageConfirm, setCopiedPageConfirm] = useState(false);
 	const initialLoadRef = useRef(false);
 
 	const hasOpenIndexes = openIndexes.length > 0;
@@ -74,7 +76,6 @@ export default function BookView() {
 		setSelectedMacro(macro);
 		setSelectedMacroIndex(macros.findIndex(m => m.fileName === macro.fileName));
 		setSelectedMacroItem(macro.macros[0]);
-		setSelectedMacroItemIndex(0);
 	};
 
 	const handleCopiedMacroClick = () => {
@@ -83,6 +84,15 @@ export default function BookView() {
 			setCopiedMacro(null);
 		} else {
 			setCopiedMacroConfirm(true);
+		}
+	};
+
+	const handleCopiedPageClick = () => {
+		if (copiedPageConfirm) {
+			setCopiedPageConfirm(false);
+			setCopiedMacroPage(null);
+		} else {
+			setCopiedPageConfirm(true);
 		}
 	};
 
@@ -127,10 +137,37 @@ export default function BookView() {
 				})}
 			</div>
 			{hasOpenIndexes && (
-				<div className="fixed top-0 left-0 right-0 flex items-center justify-center gap-6 z-20">
-					{copiedMacro && (
+				<div className="fixed top-0 left-0 right-0 flex items-center justify-center gap-6 z-20 pointer-events-none">
+					{copiedMacroPage && (
 						<div
-							className="bg-green-500 text-white hover:bg-green-600 transition-colors duration-200 px-4 py-2 rounded-b-xl cursor-pointer flex items-center gap-2"
+							className={cn(
+								'bg-purple-500 text-white hover:bg-purple-600 transition-colors duration-200 px-4 py-2',
+								'rounded-b-xl cursor-pointer flex items-center gap-2 animate-pulse-brightness pointer-events-auto',
+								copiedPageConfirm ? 'opacity-100' : 'opacity-0',
+							)}
+							onClick={handleCopiedPageClick}
+						>
+							{copiedPageConfirm ? (
+								<>
+									<span className="animate-bounce">
+										Tap again to clear
+									</span>
+								</>
+							) : (
+								<>
+									<BsClipboard2CheckFill />
+									<span>Copied Page</span>
+								</>
+							)}
+						</div>
+					)}
+					{copiedMacro && !copiedMacroPage && (
+						<div
+							className={cn(
+								'bg-green-600 text-white hover:bg-green-700 transition-colors duration-200 px-4 py-2',
+								'rounded-b-xl cursor-pointer flex items-center gap-2 animate-pulse-brightness pointer-events-auto',
+								copiedMacroConfirm ? 'opacity-100' : 'opacity-0',
+							)}
 							onClick={handleCopiedMacroClick}
 						>
 							{copiedMacroConfirm ? (
@@ -148,7 +185,11 @@ export default function BookView() {
 						</div>
 					)}
 					<button
-						className="bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200 px-4 py-2 rounded-b-xl cursor-pointer flex items-center gap-2"
+						className={cn(
+							'bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200 px-4 py-2',
+							'rounded-b-xl cursor-pointer flex items-center gap-2 animate-pulse-brightness pointer-events-auto',
+							openIndexes.length > 0 ? 'opacity-100' : 'opacity-0',
+						)}
 						onClick={() => setOpenIndexes([])}
 					>
 						<BiCollapseVertical />

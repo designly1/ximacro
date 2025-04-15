@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import img from '@/img/loading.gif';
+import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 
 export default function Loading() {
 	const [loadingMessage, setLoadingMessage] = useState<string | undefined>(undefined);
@@ -30,11 +30,7 @@ export default function Loading() {
 					transition={{ duration: 0.3 }}
 				>
 					<div className="flex flex-col items-center justify-center gap-4">
-						<img
-							src={img}
-							alt="Loading"
-							className="size-36"
-						/>
+						<AiOutlineLoading3Quarters className="size-36 text-white animate-spin" />
 						<p className="text-lg text-gray-100 animate-pulse">
 							{loadingMessage}
 						</p>

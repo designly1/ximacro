@@ -26,7 +26,7 @@ export default function Button({
 		default: '',
 		destructive: 'bg-red-500 hover:bg-red-700',
 		info: 'bg-cyan-500 hover:bg-cyan-700',
-		warning: 'bg-yellow-400 text-black hover:bg-yellow-600',
+		warning: 'bg-yellow-500 text-black hover:bg-yellow-600',
 		muted: 'bg-gray-500 hover:bg-gray-600',
 		success: 'bg-green-500 hover:bg-green-700',
 	};

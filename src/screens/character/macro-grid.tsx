@@ -5,6 +5,9 @@ import { useApp } from '@/contexts/app-provider';
 
 import { cn } from '@/lib/utils';
 
+import { FaSave, FaCheckCircle, FaTrash } from 'react-icons/fa';
+import { FaRegCopy, FaPaste } from 'react-icons/fa';
+
 const isControl = (index: number) => {
 	return index < 10;
 };
@@ -22,9 +25,41 @@ export default function MacroGrid(props: MacroGridProps) {
 		selectedMacroItemIndex,
 		setSelectedMacroItemIndex,
 		setSelectedMacroItem,
+		setCopiedMacroPage,
+		setSaveMacroSignal,
+		setSelectedMacro,
+		copiedMacroPage,
+		deleteMacroSignal,
+		setDeleteMacroSignal,
+		openDialog,
 	} = useApp();
 
 	if (!selectedMacro || selectedMacroIndex === null) return null;
+
+	const handleDelete = () => {
+		openDialog({
+			title: 'Delete Page',
+			message:
+				'Are you sure you want to delete this page? This action cannot be undone.',
+			onConfirm: () => {
+				setDeleteMacroSignal(1);
+			},
+			confirmLabel: 'Delete',
+			cancelLabel: 'Cancel',
+		});
+	};
+
+	const handlePastePage = () => {
+		if (copiedMacroPage) {
+			// Create a new macro object with the same structure but with the copied macros
+			const updatedMacro = {
+				...selectedMacro,
+				macros: [...copiedMacroPage.macros],
+			};
+			setSelectedMacro(updatedMacro);
+			setSaveMacroSignal(1); // Trigger save
+		}
+	};
 
 	return (
 		<div className="flex flex-col gap-8 w-full max-w-6xl mx-auto mt-6">
@@ -89,14 +124,30 @@ export default function MacroGrid(props: MacroGridProps) {
 					);
 				})}
 			</div>
-			<Button
-				onClick={() => {
-					setSelectedMacroItemIndex(null);
-					setSelectedMacroItem(null);
-				}}
-			>
-				Clear
-			</Button>
+			<div className="flex items-center gap-2">
+				<Button
+					onClick={() => {
+						setCopiedMacroPage({ ...selectedMacro });
+					}}
+				>
+					<FaRegCopy />
+					Copy Page
+				</Button>
+				{copiedMacroPage &&
+					selectedMacro.fileName !== copiedMacroPage.fileName && (
+						<Button onClick={handlePastePage}>
+							<FaPaste />
+							Paste Page
+						</Button>
+					)}
+				<Button
+					onClick={handleDelete}
+					variant="destructive"
+				>
+					<FaTrash />
+					Delete Page
+				</Button>
+			</div>
 		</div>
 	);
 }

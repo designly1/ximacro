@@ -56,7 +56,7 @@ export default function CharacterScreen() {
 	};
 
 	return (
-		<div className="flex flex-col gap-4 p-4 mx-auto flex-1 w-[90%] max-w-5xl bg-white/45 overflow-y-auto">
+		<div className="flex flex-col gap-4 px-6 py-10 mx-auto flex-1 w-[90%] max-w-5xl bg-white/45 overflow-y-auto">
 			{selectedMacro && selectedMacroIndex !== null && selectedCharacter ? (
 				<h1 className="text-2xl font-bold text-center">
 					{`${selectedCharacter.name} / Page #${selectedMacroIndex + 1}`}

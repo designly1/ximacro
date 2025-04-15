@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ClearableInput from '@/components/clearable-input';
 import Button from '@/components/button';
 
 import { useApp } from '@/contexts/app-provider';
 
-import { FaSave, FaCheckCircle } from 'react-icons/fa';
+import { FaSave, FaCheckCircle, FaTrash } from 'react-icons/fa';
 import { FaRegCopy, FaPaste } from 'react-icons/fa';
 
 import type { Macro } from '@/contexts/app-provider';
@@ -16,34 +16,50 @@ export default function MacroForm() {
 		selectedMacroIndex,
 		setSelectedMacro,
 		handleSaveMacro,
+		handleDeleteMacro,
 		openDialog,
 		copiedMacro,
 		setCopiedMacro,
 		selectedMacro,
 		selectedMacroItemIndex,
 		setSelectedMacroItemIndex,
+		setSaveMacroSignal,
 	} = useApp();
 
 	const [isCopied, setIsCopied] = useState(false);
+	const [localMacro, setLocalMacro] = useState<Macro | null>(null);
+	const [hasChanges, setHasChanges] = useState(false);
+
+	// Initialize local state when selectedMacroItem changes
+	useEffect(() => {
+		if (selectedMacroItem) {
+			setLocalMacro(selectedMacroItem);
+			setHasChanges(false);
+		}
+	}, [selectedMacroItem]);
 
 	if (
 		!selectedMacroItem ||
 		selectedMacroIndex === null ||
-		selectedMacroItemIndex === null
+		selectedMacroItemIndex === null ||
+		!localMacro
 	)
 		return null;
 
 	const handleUpdateMacro = (macro: Macro, index: number) => {
-		setSelectedMacroItem(macro);
-		setSelectedMacroItemIndex(index);
+		setLocalMacro(macro);
+		setHasChanges(true);
 	};
 
 	const handleSave = () => {
 		openDialog({
 			title: 'Save Macro',
-			message: 'Are you sure you want to save this macro?',
+			message:
+				'Are you sure you want to save this macro? Make sure you are not logged in on this character before proceeding!',
 			onConfirm: () => {
-				handleSaveMacro();
+				setSaveMacroSignal(1);
+				setSelectedMacroItem(localMacro);
+				setHasChanges(false);
 			},
 			confirmLabel: 'Save',
 			cancelLabel: 'Cancel',
@@ -52,8 +68,8 @@ export default function MacroForm() {
 
 	const handleCopy = () => {
 		setIsCopied(true);
-		navigator.clipboard.writeText(JSON.stringify(selectedMacroItem, null, 2));
-		setCopiedMacro(selectedMacroItem);
+		navigator.clipboard.writeText(JSON.stringify(localMacro, null, 2));
+		setCopiedMacro(localMacro);
 
 		setTimeout(() => {
 			setIsCopied(false);
@@ -64,38 +80,57 @@ export default function MacroForm() {
 		if (copiedMacro && selectedMacro) {
 			const updatedMacro = {
 				...copiedMacro,
-				offset: selectedMacroItem.offset,
+				offset: localMacro.offset,
 			};
 
 			// Update the macro in the selectedMacro.macros array
 			const macroIndex = selectedMacro.macros.findIndex(
-				(macro: Macro) => macro.offset === selectedMacroItem.offset,
+				(macro: Macro) => macro.offset === localMacro.offset,
 			);
 
 			if (macroIndex !== -1) {
 				const newMacro = { ...selectedMacro };
 				newMacro.macros[macroIndex] = updatedMacro;
 				setSelectedMacro(newMacro);
-				console.log(newMacro);
-				console.log(selectedMacro);
 			}
 
-			// Update the selected macro item
-			handleUpdateMacro(updatedMacro, selectedMacroItemIndex);
+			// Update the local macro
+			setLocalMacro(updatedMacro);
+			setHasChanges(true);
 		}
+	};
+
+	const handleDelete = () => {
+		openDialog({
+			title: 'Delete Macro',
+			message: 'Are you sure you want to delete this macro?',
+			onConfirm: () => {
+				setLocalMacro(null);
+			},
+			confirmLabel: 'Delete',
+			cancelLabel: 'Cancel',
+		});
 	};
 
 	return (
 		<>
 			<div className="flex flex-col gap-4 w-full mt-6">
+				<div className="flex items-center justify-between">
+					<h2 className="text-lg font-bold">Macro Editor</h2>
+					{hasChanges && (
+						<span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+							Unsaved Changes
+						</span>
+					)}
+				</div>
 				<div className="flex flex-col gap-2 w-full">
 					<label className="font-bold text-sm">Macro Name</label>
 					<ClearableInput
-						value={selectedMacroItem.name}
+						value={localMacro.name}
 						onChange={e =>
 							handleUpdateMacro(
 								{
-									...selectedMacroItem,
+									...localMacro,
 									name: e.target.value,
 								},
 								selectedMacroItemIndex,
@@ -104,7 +139,7 @@ export default function MacroForm() {
 						onClear={() =>
 							handleUpdateMacro(
 								{
-									...selectedMacroItem,
+									...localMacro,
 									name: '',
 								},
 								selectedMacroItemIndex,
@@ -115,7 +150,7 @@ export default function MacroForm() {
 						maxLength={8}
 					/>
 					{/*6 macro lines*/}
-					{selectedMacroItem.lines.map((line, j) => (
+					{localMacro.lines.map((line, j) => (
 						<div
 							className="flex flex-col gap-2 w-full"
 							key={j}
@@ -127,8 +162,8 @@ export default function MacroForm() {
 								onChange={e =>
 									handleUpdateMacro(
 										{
-											...selectedMacroItem,
-											lines: selectedMacroItem.lines.map((l, i) =>
+											...localMacro,
+											lines: localMacro.lines.map((l, i) =>
 												i === j
 													? { ...l, data: e.target.value }
 													: l,
@@ -140,8 +175,8 @@ export default function MacroForm() {
 								onClear={() =>
 									handleUpdateMacro(
 										{
-											...selectedMacroItem,
-											lines: selectedMacroItem.lines.map((l, i) =>
+											...localMacro,
+											lines: localMacro.lines.map((l, i) =>
 												i === j ? { ...l, data: '' } : l,
 											),
 										},
@@ -156,9 +191,14 @@ export default function MacroForm() {
 					))}
 				</div>
 				<div className="flex gap-6">
-					<Button onClick={handleSave}>
+					<Button
+						onClick={handleSave}
+						disabled={!hasChanges}
+						variant={hasChanges ? 'default' : 'muted'}
+						className={hasChanges ? 'animate-pulse' : ''}
+					>
 						<FaSave />
-						Save
+						Save {hasChanges ? '(Unsaved Changes)' : ''}
 					</Button>
 					{Boolean(copiedMacro) ? (
 						<Button
@@ -177,6 +217,13 @@ export default function MacroForm() {
 							Copy Macro
 						</Button>
 					)}
+					<Button
+						onClick={handleDelete}
+						variant="destructive"
+					>
+						<FaTrash />
+						Delete Macro
+					</Button>
 				</div>
 			</div>
 		</>

@@ -9,7 +9,7 @@ import Loading from '@/components/loading';
 
 import { ToastContainer, toast } from 'react-toastify';
 
-type Screen = 'main' | 'settings' | 'add-character' | 'character';
+type Screen = 'main' | 'settings' | 'add-character' | 'character' | 'export-import';
 
 export interface DialogProps {
 	title: string;
@@ -77,8 +77,13 @@ interface AppContextType {
 	setSelectedMacroItemIndex: React.Dispatch<React.SetStateAction<number | null>>;
 	copiedMacro: Macro | null;
 	setCopiedMacro: React.Dispatch<React.SetStateAction<Macro | null>>;
-	copiedMacroPage: number | null;
-	setCopiedMacroPage: React.Dispatch<React.SetStateAction<number | null>>;
+	copiedMacroPage: MacroItem | null;
+	setCopiedMacroPage: React.Dispatch<React.SetStateAction<MacroItem | null>>;
+	handleDeleteMacro: () => void;
+	saveMacroSignal: number;
+	setSaveMacroSignal: React.Dispatch<React.SetStateAction<number>>;
+	deleteMacroSignal: number;
+	setDeleteMacroSignal: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -106,7 +111,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 		null,
 	);
 	const [copiedMacro, setCopiedMacro] = useState<Macro | null>(null);
-	const [copiedMacroPage, setCopiedMacroPage] = useState<number | null>(null);
+	const [copiedMacroPage, setCopiedMacroPage] = useState<MacroItem | null>(null);
+	const [saveMacroSignal, setSaveMacroSignal] = useState(0);
+	const [deleteMacroSignal, setDeleteMacroSignal] = useState(0);
 
 	const elec = window.electronAPI;
 
@@ -259,11 +266,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 		newMacro.macros[macroItemIndex] = selectedMacroItem;
 
-		setSelectedMacro(newMacro);
-
+		// Create a new array of macros and update it with the new macro
 		const newMacros = [...macros];
 		newMacros[selectedMacroIndex] = newMacro;
 
+		// Update both states
+		setSelectedMacro(newMacro);
 		setMacros(newMacros);
 
 		window.loadingMessage = 'Saving macros...';
@@ -272,6 +280,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 		toast.success('Macro saved!');
 	};
+
+	useEffect(() => {
+		if (saveMacroSignal > 0) {
+			handleSaveMacro();
+			setSaveMacroSignal(0);
+		}
+	}, [saveMacroSignal]);
+
+	const handleDeleteMacro = async () => {
+		if (!selectedMacro || typeof selectedMacroIndex !== 'number') return;
+
+		const newMacros = [...macros];
+		const macroToDelete = newMacros[selectedMacroIndex];
+		macroToDelete.macros = macroToDelete.macros.map(macro => ({
+			...macro,
+			name: '',
+			lines: macro.lines.map(line => ({
+				...line,
+				data: '',
+			})),
+		}));
+
+		setMacros(newMacros);
+		setSelectedMacro(newMacros[selectedMacroIndex]);
+
+		toast.success('Macro deleted!');
+	};
+
+	useEffect(() => {
+		if (deleteMacroSignal > 0) {
+			handleDeleteMacro();
+			setDeleteMacroSignal(0);
+		}
+	}, [deleteMacroSignal]);
 
 	return (
 		<AppContext.Provider
@@ -317,6 +359,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 				setCopiedMacro,
 				copiedMacroPage,
 				setCopiedMacroPage,
+				handleDeleteMacro,
+				saveMacroSignal,
+				setSaveMacroSignal,
+				deleteMacroSignal,
+				setDeleteMacroSignal,
 			}}
 		>
 			<>

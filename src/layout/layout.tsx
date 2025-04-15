@@ -7,6 +7,7 @@ import MainScreen from '@/screens/main';
 import SettingsScreen from '@/screens/settings';
 import AddCharacterScreen from '@/screens/add-character';
 import CharacterScreen from '@/screens/character';
+import ExportImportScreen from '@/screens/character/export-import';
 
 // Modals
 import Dialog from '@/components/dialog';
@@ -32,6 +33,7 @@ export default function Layout() {
 						settings: <SettingsScreen />,
 						'add-character': <AddCharacterScreen />,
 						character: <CharacterScreen />,
+						'export-import': <ExportImportScreen />,
 					}[screen]
 				}
 			</div>
